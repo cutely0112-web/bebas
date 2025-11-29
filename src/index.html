@@ -1,17 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
-  <title>Vanilla JavaScript App</title>
+  <title>스마트스토어 마진 계산기</title>
 </head>
 
 <body>
-  <main>
-    <h1>Vanilla JavaScript App</h1>
+  <main class="page">
+    <header>
+      <p class="eyebrow">판매자 도구</p>
+      <h1>스마트스토어 마진 계산기</h1>
+      <p class="lead">판매가, 수수료, 광고비, 배송비를 입력하면 예상 마진과 마진율을 바로 확인할 수 있습니다.</p>
+    </header>
+
+    <section class="calculator">
+      <div class="card">
+        <h2>판매 정보</h2>
+        <div class="grid">
+          <label class="field">
+            <span>판매가 (원)</span>
+            <input id="salePrice" type="number" min="0" step="100" placeholder="예: 35,000" />
+            <small>구매자가 결제하는 최종 금액</small>
+          </label>
+          <label class="field">
+            <span>상품 원가 (원)</span>
+            <input id="productCost" type="number" min="0" step="100" placeholder="예: 18,000" />
+            <small>부가세 포함 공급가</small>
+          </label>
+          <label class="field">
+            <span>쿠폰/포인트 할인 (원)</span>
+            <input id="discount" type="number" min="0" step="100" value="0" />
+            <small>구매 시 사용한 할인 금액</small>
+          </label>
+          <label class="field">
+            <span>판매자 부담 배송비 (원)</span>
+            <input id="shippingCost" type="number" min="0" step="500" value="3000" />
+            <small>무료배송이라면 실제 배송비를 입력하세요</small>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>수수료 & 광고</h2>
+        <div class="grid">
+          <label class="field">
+            <span>네이버 수수료 (%)</span>
+            <input id="feeRate" type="number" min="0" max="30" step="0.1" value="6" />
+            <small>스마트스토어 결제 수수료(%)</small>
+          </label>
+          <label class="field">
+            <span>광고비 (원)</span>
+            <input id="adCost" type="number" min="0" step="100" value="0" />
+            <small>클릭/노출 비용 등</small>
+          </label>
+          <label class="field">
+            <span>기타 비용 (원)</span>
+            <input id="etcCost" type="number" min="0" step="100" value="0" />
+            <small>포장비, 창고비 등 추가 비용</small>
+          </label>
+        </div>
+      </div>
+
+      <div class="card results" aria-live="polite">
+        <div class="result-row">
+          <div>
+            <p class="label">예상 마진</p>
+            <p class="value" id="marginAmount">0원</p>
+          </div>
+          <div class="pill" id="marginRate">0%</div>
+        </div>
+        <dl class="breakdown">
+          <div>
+            <dt>수수료</dt>
+            <dd id="feeAmount">0원</dd>
+          </div>
+          <div>
+            <dt>광고비</dt>
+            <dd id="adAmount">0원</dd>
+          </div>
+          <div>
+            <dt>배송비</dt>
+            <dd id="shipAmount">0원</dd>
+          </div>
+          <div>
+            <dt>상품 원가</dt>
+            <dd id="costAmount">0원</dd>
+          </div>
+        </dl>
+        <p class="hint">수수료 = (판매가 - 할인) × 수수료율</p>
+      </div>
+    </section>
   </main>
+
+  <script>
+    const inputs = {
+      salePrice: document.getElementById('salePrice'),
+      productCost: document.getElementById('productCost'),
+      discount: document.getElementById('discount'),
+      shippingCost: document.getElementById('shippingCost'),
+      feeRate: document.getElementById('feeRate'),
+      adCost: document.getElementById('adCost'),
+      etcCost: document.getElementById('etcCost'),
+    };
+
+    const outputs = {
+      marginAmount: document.getElementById('marginAmount'),
+      marginRate: document.getElementById('marginRate'),
+      feeAmount: document.getElementById('feeAmount'),
+      adAmount: document.getElementById('adAmount'),
+      shipAmount: document.getElementById('shipAmount'),
+      costAmount: document.getElementById('costAmount'),
+    };
+
+    const formatCurrency = (value) =>
+      value.toLocaleString('ko-KR', { maximumFractionDigits: 0 }) + '원';
+
+    const clampToZero = (num) => Math.max(0, Number(num) || 0);
+
+    const calculate = () => {
+      const salePrice = clampToZero(inputs.salePrice.value);
+      const discount = clampToZero(inputs.discount.value);
+      const productCost = clampToZero(inputs.productCost.value);
+      const shippingCost = clampToZero(inputs.shippingCost.value);
+      const feeRate = clampToZero(inputs.feeRate.value);
+      const adCost = clampToZero(inputs.adCost.value);
+      const etcCost = clampToZero(inputs.etcCost.value);
+
+      const chargeableAmount = Math.max(salePrice - discount, 0);
+      const fee = Math.floor((chargeableAmount * feeRate) / 100);
+      const totalCost = productCost + shippingCost + adCost + etcCost + fee;
+      const margin = salePrice - discount - totalCost;
+      const marginRate = chargeableAmount > 0 ? (margin / chargeableAmount) * 100 : 0;
+
+      outputs.feeAmount.textContent = formatCurrency(fee);
+      outputs.adAmount.textContent = formatCurrency(adCost);
+      outputs.shipAmount.textContent = formatCurrency(shippingCost);
+      outputs.costAmount.textContent = formatCurrency(productCost + etcCost);
+      outputs.marginAmount.textContent = formatCurrency(margin);
+      outputs.marginRate.textContent = `${marginRate.toFixed(1)}%`;
+
+      outputs.marginRate.classList.toggle('negative', margin < 0);
+      outputs.marginAmount.classList.toggle('negative', margin < 0);
+    };
+
+    Object.values(inputs).forEach((input) => {
+      input.addEventListener('input', calculate);
+    });
+
+    calculate();
+  </script>
 </body>
 
 </html>
