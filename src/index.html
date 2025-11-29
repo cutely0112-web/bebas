@@ -133,7 +133,7 @@
       const fee = Math.floor((chargeableAmount * feeRate) / 100);
       const totalCost = productCost + shippingCost + adCost + etcCost + fee;
       const margin = salePrice - discount - totalCost;
-      const marginRate = salePrice > 0 ? (margin / salePrice) * 100 : 0;
+      const marginRate = chargeableAmount > 0 ? (margin / chargeableAmount) * 100 : 0;
 
       outputs.feeAmount.textContent = formatCurrency(fee);
       outputs.adAmount.textContent = formatCurrency(adCost);
